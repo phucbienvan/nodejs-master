@@ -12,7 +12,7 @@ app.use(compression())
 
 // Init Database
 require('./dbs/init.mongodb')
-const { countConnect } = require('./helpers/check.connect')
-countConnect()
+const router = require('./routes')
+app.use('/', router)
 
 module.exports = app
