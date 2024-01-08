@@ -1,3 +1,5 @@
+'use strict'
+
 const {Schema, model, Types} = require('mongoose'); // Erase if already required
 
 const DOCUMENT_NAME = 'User'
@@ -35,8 +37,11 @@ var userSchema = new Schema({
     }
 }, {
     timestamps:true,
-    collation:COLLECTION_NAME
+    collation: {
+        locale: 'en_US',
+        strength: 1,
+    },
 });
 
 //Export the model
-module.exports = mongoose.model(DOCUMENT_NAME, userSchema);
+module.exports = model(DOCUMENT_NAME, userSchema);
