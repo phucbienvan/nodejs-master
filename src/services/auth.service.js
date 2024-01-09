@@ -28,32 +28,20 @@ class AuthService {
             const newUser = await userModel.create({name, email, password:hashPassword, role: 'USER'})
 
             if (newUser) {
-                const {privateKey, publicKey} = crypto.generateKeyPairSync('rsa', {
-                    modulusLength: 4096,
-                    publicKeyEncoding: {
-                        type: 'pkcs1',
-                        format: 'pem'
-                    },
-                    privateKeyEncoding: {
-                        type: 'pkcs1',
-                        format: 'pem'
-                    }
-                })
-
-                const publicKeyString = await keyTokenService.createToken({
-                    userId: newUser._id,
-                    publicKey
-                })
+                
+                const publicKey = crypto.randomBytes(64).toString('hex')
+                const privateKey = crypto.randomBytes(64).toString('hex')
 
                 console.log(privateKey, publicKey);
 
-                if (!publicKeyString) {
-                    return {
-                        message: 'publicKeyString error'
-                    }
-                }
+                const publicKeyString = await keyTokenService.createToken({
+                    userId: newUser._id,
+                    publicKey,
+                    privateKey
+                })
 
-                const accessToken = await this.generateAccessToken({userId: newUser._id, email}, publicKeyString, privateKey)
+
+                const accessToken = await this.generateAccessToken({userId: newUser._id, email}, publicKey, privateKey)
 
                 return {
                     code: 200,
@@ -78,12 +66,12 @@ class AuthService {
 
     static generateAccessToken = async (payload, publicKey, privateKey) => {
         const accessToken = await JWT.sign(payload, privateKey, {
-            algorithm: 'RS256',
+            algorithm: 'HS256',
             expiresIn: '30 days'
         })
 
         const refreshToken = await JWT.sign(payload, privateKey, {
-            algorithm: 'RS256',
+            algorithm: 'HS256',
             expiresIn: '60 days'
         })
 
