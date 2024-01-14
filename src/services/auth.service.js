@@ -8,59 +8,50 @@ const JWT = require('jsonwebtoken')
 const { token } = require("morgan")
 const { format } = require("path")
 const { getInfoData } = require("../utils")
+const { BadRequestError } = require("../core/error.response")
 
 class AuthService {
     static signup = async(params) => {
-        try {
-            const name = params.name
-            const email = params.email
-            const password = params.password
-            const checkUser = await userModel.findOne({email}).lean()
+        const name = params.name
+        const email = params.email
+        const password = params.password
+        const checkUser = await userModel.findOne({email}).lean()
 
-            if(checkUser) {
-                return {
-                    message: 'email already exist'
-                }
-            }
+        if(checkUser) {
+            throw new BadRequestError('User already register')
+        }
 
-            const hashPassword = await bcrypt.hash(password, 10)
+        const hashPassword = await bcrypt.hash(password, 10)
 
-            const newUser = await userModel.create({name, email, password:hashPassword, role: 'USER'})
+        const newUser = await userModel.create({name, email, password:hashPassword, role: 'USER'})
 
-            if (newUser) {
-                
-                const publicKey = crypto.randomBytes(64).toString('hex')
-                const privateKey = crypto.randomBytes(64).toString('hex')
+        if (newUser) {
+            
+            const publicKey = crypto.randomBytes(64).toString('hex')
+            const privateKey = crypto.randomBytes(64).toString('hex')
 
-                console.log(privateKey, publicKey);
+            console.log(privateKey, publicKey);
 
-                const publicKeyString = await keyTokenService.createToken({
-                    userId: newUser._id,
-                    publicKey,
-                    privateKey
-                })
+            const publicKeyString = await keyTokenService.createToken({
+                userId: newUser._id,
+                publicKey,
+                privateKey
+            })
 
-
-                const accessToken = await this.generateAccessToken({userId: newUser._id, email}, publicKey, privateKey)
-
-                return {
-                    code: 200,
-                    data: {
-                        user: getInfoData({fileds: ['_id','name','email','createdAt'], object: newUser}), 
-                        token: accessToken
-                    }
-                }
-            }
+            const accessToken = await this.generateAccessToken({userId: newUser._id, email}, publicKey, privateKey)
 
             return {
                 code: 200,
-                data: null
+                data: {
+                    user: getInfoData({fileds: ['_id','name','email','createdAt'], object: newUser}), 
+                    token: accessToken
+                }
             }
-        } catch(error) {
-            console.log(error);
-            return {
-                message: 'error'
-            }
+        }
+
+        return {
+            code: 200,
+            data: null
         }
     }
 
