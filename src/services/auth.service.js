@@ -22,15 +22,11 @@ class AuthService {
         }
 
         const hashPassword = await bcrypt.hash(password, 10)
-
         const newUser = await userModel.create({name, email, password:hashPassword, role: 'USER'})
 
         if (newUser) {
-            
             const publicKey = crypto.randomBytes(64).toString('hex')
             const privateKey = crypto.randomBytes(64).toString('hex')
-
-            console.log(privateKey, publicKey);
 
             const publicKeyString = await keyTokenService.createToken({
                 userId: newUser._id,
@@ -41,11 +37,8 @@ class AuthService {
             const accessToken = await this.generateAccessToken({userId: newUser._id, email}, publicKey, privateKey)
 
             return {
-                code: 200,
-                data: {
-                    user: getInfoData({fileds: ['_id','name','email','createdAt'], object: newUser}), 
-                    token: accessToken
-                }
+                user: getInfoData({fileds: ['_id','name','email','createdAt'], object: newUser}), 
+                token: accessToken
             }
         }
 
